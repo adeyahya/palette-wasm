@@ -2,7 +2,7 @@
 pub mod log;
 mod utils;
 
-use image::{DynamicImage, ImageFormat};
+use image::{ColorType, DynamicImage, ImageFormat};
 use std::io::{Cursor, Read, Seek, SeekFrom};
 use std::panic;
 use wasm_bindgen::prelude::*;
@@ -71,7 +71,12 @@ fn _get_image_as_array(_img: DynamicImage) -> Vec<u8> {
 pub fn get_color_palette(_array: &[u8]) -> JsValue {
     utils::set_panic_hook();
     let img = load_image_from_array(_array);
-    let colors = dominant_color::get_colors(&img.to_bytes(), false);
+    let has_alpha = match img.color() {
+        ColorType::Rgba8 => true,
+        ColorType::Bgra8 => true,
+        _ => false,
+    };
+    let colors = dominant_color::get_colors(&img.to_bytes(), has_alpha);
     let mut rgb_colors: Vec<RgbColor<u8>> = Vec::new();
     for n in (2..colors.len()).step_by(3) {
         rgb_colors.push(RgbColor {
