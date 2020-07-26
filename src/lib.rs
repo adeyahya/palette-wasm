@@ -2,6 +2,7 @@
 pub mod log;
 mod utils;
 
+use color_convert::color::Color;
 use image::{ColorType, DynamicImage, ImageFormat};
 use std::io::{Cursor, Read, Seek, SeekFrom};
 use std::panic;
@@ -67,8 +68,10 @@ fn _get_image_as_array(_img: DynamicImage) -> Vec<u8> {
     return out;
 }
 
+// color_type: hex, cmyk, rgb, hsl
+// default color_type: hex
 #[wasm_bindgen]
-pub fn get_color_palette(_array: &[u8]) -> JsValue {
+pub fn get_color_palette(_array: &[u8], color_type: Option<String>) -> JsValue {
     utils::set_panic_hook();
     let img = load_image_from_array(_array);
     let has_alpha = match img.color() {
@@ -82,16 +85,39 @@ pub fn get_color_palette(_array: &[u8]) -> JsValue {
         log!("doesn't support image with alpha yet!");
         panic!("doesn't support image with alpha yet!")
     }
+    let color_type = match color_type {
+        Some(color_type) => color_type,
+        _ => "hex".to_string(),
+    };
 
     let colors = dominant_color::get_colors_with_config(&img.to_bytes(), false, 244.0 * 244.0, 0.0);
-    let mut rgb_colors: Vec<String> = Vec::new();
+    let mut color_strings: Vec<String> = Vec::new();
     for n in (2..colors.len()).step_by(3) {
         let rgb = RgbColor {
             r: colors[n - 2],
             g: colors[n - 1],
             b: colors[n],
         };
-        rgb_colors.push(rgb.to_string());
+        let rgb_string = rgb.to_string().to_owned();
+        let color = Color::new(rgb_string.as_str());
+
+        match color_type.to_lowercase().as_str() {
+            "hex" => {
+                color_strings.push(color.to_hex().unwrap());
+            }
+            "cmyk" => {
+                color_strings.push(color.to_cmyk().unwrap());
+            }
+            "rgb" => {
+                color_strings.push(color.to_rgb().unwrap());
+            }
+            "hsl" => {
+                color_strings.push(color.to_hsl().unwrap());
+            }
+            _ => {
+                color_strings.push(color.to_hex().unwrap());
+            }
+        };
     }
-    JsValue::from_serde(&rgb_colors).unwrap()
+    JsValue::from_serde(&color_strings).unwrap()
 }
