@@ -78,17 +78,14 @@ pub fn get_color_palette(_array: &[u8]) -> JsValue {
     };
     let colors =
         dominant_color::get_colors_with_config(&img.to_bytes(), has_alpha, 244.0 * 244.0, 0.0);
-    let mut rgb_colors: Vec<RgbColor<u8>> = Vec::new();
+    let mut rgb_colors: Vec<String> = Vec::new();
     for n in (2..colors.len()).step_by(3) {
-        rgb_colors.push(RgbColor {
+        let rgb = RgbColor {
             r: colors[n - 2],
             g: colors[n - 1],
             b: colors[n],
-        })
+        };
+        rgb_colors.push(rgb.to_string());
     }
-    let rgb_colors: Vec<String> = rgb_colors
-        .into_iter()
-        .map(|color| color.to_string())
-        .collect();
     JsValue::from_serde(&rgb_colors).unwrap()
 }
