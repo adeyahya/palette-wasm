@@ -76,8 +76,14 @@ pub fn get_color_palette(_array: &[u8]) -> JsValue {
         ColorType::Bgra8 => true,
         _ => false,
     };
-    let colors =
-        dominant_color::get_colors_with_config(&img.to_bytes(), has_alpha, 244.0 * 244.0, 0.0);
+
+    // throw if detect image with alpha
+    if has_alpha {
+        log!("doesn't support image with alpha yet!");
+        panic!("doesn't support image with alpha yet!")
+    }
+
+    let colors = dominant_color::get_colors_with_config(&img.to_bytes(), false, 244.0 * 244.0, 0.0);
     let mut rgb_colors: Vec<String> = Vec::new();
     for n in (2..colors.len()).step_by(3) {
         let rgb = RgbColor {
